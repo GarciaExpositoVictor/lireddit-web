@@ -1,5 +1,5 @@
 import { dedupExchange } from '@urql/core';
-import { fetchExchange } from 'urql';
+import { Exchange, fetchExchange } from 'urql';
 import {
   LogoutMutation,
   MeQuery,
@@ -9,6 +9,20 @@ import {
 } from '../generated/graphql';
 import { betterUpdateQuery } from '../pages/betterUpdateQuery';
 import { cacheExchange } from '@urql/exchange-graphcache';
+import Router from 'next/router';
+import { pipe, tap } from 'wonka';
+
+const errorExchange: Exchange = ({ forward }) => (ops$) => {
+  return pipe(
+    forward(ops$),
+    tap(({ error }) => {
+      //If OperationREsult has an error send a request to sentry
+      if (error?.message.includes('not authenticated')) {
+        Router.replace('/login');
+      }
+    })
+  );
+};
 
 export const createUrlqlClient = (ssrExchange: any) => ({
   url: 'http://localhost:4000/graphql',
@@ -63,6 +77,7 @@ export const createUrlqlClient = (ssrExchange: any) => ({
         }
       }
     }),
+    errorExchange,
     ssrExchange,
     fetchExchange
   ]
