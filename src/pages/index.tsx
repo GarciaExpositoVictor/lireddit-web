@@ -1,22 +1,36 @@
 import { withUrqlClient } from 'next-urql';
-import { Navbar } from '../components/navbar';
 import { usePostsQuery } from '../generated/graphql';
 import { createUrlqlClient } from '../utils/createUrqlClient';
 import { Layout } from '../components/layout';
 import React from 'react';
-import { Link } from '@chakra-ui/react';
+import { Box, Flex, Heading, Link, Stack, Text } from '@chakra-ui/react';
 import NextLink from 'next/link';
 
 const Index = () => {
-  const [{ data }] = usePostsQuery();
+  const [{ data, fetching }] = usePostsQuery({
+    variables: {
+      limit: 10
+    }
+  });
   return (
     <Layout>
-      <Link>
-        <NextLink href="/create-post">create post</NextLink>
-      </Link>
-      {!data
-        ? null
-        : data.posts.map(post => <div key={post.id}>{post.title}</div>)}
+      <Flex align="center">
+        <Heading>LiReddit</Heading>
+        <Link ml="auto">
+          <NextLink href="/create-post">create post</NextLink>
+        </Link>
+      </Flex>
+      <br />
+      {fetching && !data ? <div>loading...</div> : (
+        <Stack spacing={8}>
+          {data.posts.map((post) => (
+            <Box key={post.id} p={5} shadow="md" borderWidth="1px">
+              <Heading>{post.title}</Heading>
+              <Text mt={4}>{post.textSnippet}</Text>
+            </Box>
+          ))}
+        </Stack>
+      )}
     </Layout>
   );
 };
