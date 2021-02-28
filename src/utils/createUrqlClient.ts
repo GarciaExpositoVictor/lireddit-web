@@ -1,4 +1,4 @@
-import { dedupExchange } from '@urql/core';
+import { dedupExchange, stringifyVariables } from '@urql/core';
 import { Exchange, fetchExchange } from 'urql';
 import {
   LogoutMutation,
@@ -8,7 +8,7 @@ import {
   RegisterMutation
 } from '../generated/graphql';
 import { betterUpdateQuery } from '../pages/betterUpdateQuery';
-import { cacheExchange } from '@urql/exchange-graphcache';
+import { cacheExchange, DataField, Resolver } from '@urql/exchange-graphcache';
 import Router from 'next/router';
 import { pipe, tap } from 'wonka';
 
@@ -32,6 +32,14 @@ export const createUrlqlClient = (ssrExchange: any) => ({
   exchanges: [
     dedupExchange,
     cacheExchange({
+      keys: {
+        PaginatedPosts: () => null
+      },
+      resolvers: {
+        Query: {
+          posts: cursorPagination()
+        }
+      },
       updates: {
         Mutation: {
           logout: (_result, _args, cache, _info) => {
@@ -82,3 +90,92 @@ export const createUrlqlClient = (ssrExchange: any) => ({
     fetchExchange
   ]
 });
+
+export const cursorPagination = (): Resolver => {
+  return (_parent, fieldArgs, cache, info) => {
+    const { parentKey: entityKey, fieldName } = info;
+    const allFields = cache.inspectFields(entityKey);
+    const fieldInfos = allFields.filter((info) => info.fieldName === fieldName);
+    const size = fieldInfos.length;
+    if (size === 0) {
+      return undefined;
+    }
+
+    const fieldKey = `${fieldName}(${stringifyVariables(fieldArgs)})`;
+    const isInCache = cache.resolve(
+      cache.resolveFieldByKey(entityKey, fieldKey) as string,
+      'posts'
+    );
+    info.partial = !isInCache;
+    const results: string[] = [];
+    let hasMore = true;
+    fieldInfos.forEach((fieldInfo) => {
+      const key = cache.resolveFieldByKey(
+        entityKey,
+        fieldInfo.fieldKey
+      ) as string;
+      const data = cache.resolve(key, 'posts') as string[];
+      const more = cache.resolve(key, 'hasMore');
+      if (!more) {
+        hasMore = false;
+      }
+      results.push(...data);
+    });
+    return {
+      __typename: 'PaginatedPosts',
+      hasMore,
+      posts: results
+    };
+    // const visited = new Set();
+    // let result: NullArray<string> = [];
+    // let prevOffset: number | null = null;
+
+    // for (let i = 0; i < size; i++) {
+    //   const { fieldKey, arguments: args } = fieldInfos[i];
+    //   if (args === null || !compareArgs(fieldArgs, args)) {
+    //     continue;
+    //   }
+
+    //   const links = cache.resolve(entityKey, fieldKey) as string[];
+    //   const currentOffset = args[offsetArgument];
+
+    //   if (
+    //     links === null ||
+    //     links.length === 0 ||
+    //     typeof currentOffset !== 'number'
+    //   ) {
+    //     continue;
+    //   }
+
+    //   const tempResult: NullArray<string> = [];
+
+    //   for (let j = 0; j < links.length; j++) {
+    //     const link = links[j];
+    //     if (visited.has(link)) continue;
+    //     tempResult.push(link);
+    //     visited.add(link);
+    //   }
+
+    //   if (
+    //     (!prevOffset || currentOffset > prevOffset) ===
+    //     (mergeMode === 'after')
+    //   ) {
+    //     result = [...result, ...tempResult];
+    //   } else {
+    //     result = [...tempResult, ...result];
+    //   }
+
+    //   prevOffset = currentOffset;
+    // }
+
+    // const hasCurrentPage = cache.resolve(entityKey, fieldName, fieldArgs);
+    // if (hasCurrentPage) {
+    //   return result;
+    // } else if (!(info as any).store.schema) {
+    //   return undefined;
+    // } else {
+    //   info.partial = true;
+    //   return result;
+    // }
+  };
+};
