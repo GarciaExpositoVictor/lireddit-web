@@ -4,18 +4,27 @@ import { createUrlqlClient } from '../utils/createUrqlClient';
 import { Layout } from '../components/layout';
 import React, { useState } from 'react';
 import {
+  Badge,
   Box,
   Button,
   Flex,
   Heading,
+  Icon,
+  IconButton,
   Link,
+  Spacer,
   Stack,
   Text
 } from '@chakra-ui/react';
 import NextLink from 'next/link';
+import { AddIcon, MinusIcon } from '@chakra-ui/icons';
+import { UpdootSection } from '../components/updootSection';
 
 const Index = () => {
-  const [variables, setVariables] = useState({ limit: 20, cursor: null as string | null });
+  const [variables, setVariables] = useState({
+    limit: 20,
+    cursor: null as string | null
+  });
   const [{ data, fetching }] = usePostsQuery({
     variables
   });
@@ -38,10 +47,17 @@ const Index = () => {
       ) : (
         <Stack spacing={8}>
           {data!.posts.posts.map((post) => (
-            <Box key={post.id} p={5} shadow="md" borderWidth="1px">
-              <Heading>{post.title}</Heading>
-              <Text mt={4}>{post.textSnippet}</Text>
-            </Box>
+            <Flex key={post.id} p={5} shadow="md" borderWidth="1px">
+              <UpdootSection post={post}></UpdootSection>
+              <Box>
+                <Flex alignItems='center' justifyItems='center' alignContent="center">
+                  <Heading>{post.title}</Heading>
+                  <Badge colorScheme={post.points < 0 ? 'red' : 'green'} ml={1} borderRadius={10} alignSelf='start'>{post.points}</Badge>
+                </Flex>
+                <Text>posted by {post.creator.username}</Text>
+                <Text mt={4}>{post.text}</Text>
+              </Box>
+            </Flex>
           ))}
         </Stack>
       )}
