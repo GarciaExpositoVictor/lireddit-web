@@ -28,6 +28,9 @@ export const UpdootSection: React.FC<updootSectionProps> = ({ post }) => {
         aria-label="upvote"
         colorScheme="red"
         onClick={async () => {
+          if(post.voteStatus === 1){
+            return;
+          }
           setLoadingState('updoot-loading');
           await vote({
             postId: post.id,
@@ -35,6 +38,7 @@ export const UpdootSection: React.FC<updootSectionProps> = ({ post }) => {
           });
           setLoadingState('not-loading');
         }}
+        disabled={post.voteStatus === 1}
       ></IconButton>
       <Spacer />
       <IconButton
@@ -51,6 +55,7 @@ export const UpdootSection: React.FC<updootSectionProps> = ({ post }) => {
           });
           setLoadingState('not-loading');
         }}
+        disabled={post.voteStatus === -1}
       ></IconButton>
     </Flex>
   );

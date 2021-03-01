@@ -1,24 +1,23 @@
-import { withUrqlClient } from 'next-urql';
-import { usePostsQuery } from '../generated/graphql';
-import { createUrlqlClient } from '../utils/createUrqlClient';
-import { Layout } from '../components/layout';
-import React, { useState } from 'react';
+import { DeleteIcon, EditIcon } from '@chakra-ui/icons';
 import {
   Badge,
   Box,
   Button,
   Flex,
   Heading,
-  Icon,
   IconButton,
   Link,
-  Spacer,
   Stack,
   Text
 } from '@chakra-ui/react';
+import { withUrqlClient } from 'next-urql';
 import NextLink from 'next/link';
-import { AddIcon, MinusIcon } from '@chakra-ui/icons';
+import router from 'next/router';
+import React, { useState } from 'react';
+import { Layout } from '../components/layout';
 import { UpdootSection } from '../components/updootSection';
+import { useDeletePostMutation, usePostsQuery } from '../generated/graphql';
+import { createUrlqlClient } from '../utils/createUrqlClient';
 
 const Index = () => {
   const [variables, setVariables] = useState({
@@ -29,36 +28,73 @@ const Index = () => {
     variables
   });
 
+  const [, deletePost] = useDeletePostMutation();
   if (!fetching && !data) {
     return <div>you got no posts, create one!</div>;
   }
 
   return (
     <Layout>
-      <Flex align="center">
-        <Heading>LiReddit</Heading>
-        <Link ml="auto">
-          <NextLink href="/create-post">create post</NextLink>
-        </Link>
-      </Flex>
-      <br />
       {fetching && !data ? (
         <div>loading...</div>
       ) : (
         <Stack spacing={8}>
-          {data!.posts.posts.map((post) => (
-            <Flex key={post.id} p={5} shadow="md" borderWidth="1px">
-              <UpdootSection post={post}></UpdootSection>
-              <Box>
-                <Flex alignItems='center' justifyItems='center' alignContent="center">
-                  <Heading>{post.title}</Heading>
-                  <Badge colorScheme={post.points < 0 ? 'red' : 'green'} ml={1} borderRadius={10} alignSelf='start'>{post.points}</Badge>
-                </Flex>
-                <Text>posted by {post.creator.username}</Text>
-                <Text mt={4}>{post.text}</Text>
-              </Box>
-            </Flex>
-          ))}
+          {data!.posts.posts.map((post) =>
+            !post ? null : (
+              <Flex key={post.id} p={5} shadow="md" borderWidth="1px">
+                <UpdootSection post={post}></UpdootSection>
+                <Box w="100%">
+                  <Flex
+                    alignItems="center"
+                    justifyItems="center"
+                    alignContent="center"
+                  >
+                    <Link>
+                      <NextLink href="/post/[id]" as={`/post/${post.id}`}>
+                        <Heading>{post.title}</Heading>
+                      </NextLink>
+                    </Link>
+                    <Badge
+                      colorScheme={post.points < 0 ? 'red' : 'green'}
+                      ml={1}
+                      borderRadius={10}
+                      alignSelf="start"
+                    >
+                      {post.points}
+                    </Badge>
+                  </Flex>
+                  <Box>
+                    <Text>posted by {post.creator.username}</Text>
+                    <Text mt={4}>{post.text}</Text>
+                  </Box>
+                  <Flex direction="row" justifyContent="end">
+                    <IconButton
+                      onClick={() => {
+                        router.push(`/post/edit/${post.id}`);
+                      }}
+                      as={Link}
+                      aria-label="update post"
+                      size="sm"
+                      isRound={false}
+                      icon={<EditIcon></EditIcon>}
+                      colorScheme="orange"
+                      mr={3}
+                    ></IconButton>
+                    <IconButton
+                      onClick={() => {
+                        deletePost({ id: post.id });
+                      }}
+                      aria-label="delete post"
+                      size="sm"
+                      isRound={false}
+                      icon={<DeleteIcon></DeleteIcon>}
+                      colorScheme="blackAlpha"
+                    ></IconButton>
+                  </Flex>
+                </Box>
+              </Flex>
+            )
+          )}
         </Stack>
       )}
       {data && data.posts.hasMore ? (
