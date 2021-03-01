@@ -1,21 +1,13 @@
 import { Heading } from '@chakra-ui/react';
 import { withUrqlClient } from 'next-urql';
-import { useRouter } from 'next/router';
 import React from 'react';
+import EditDeletePostButtons from '../../components/editDeletePostButtons';
 import { Layout } from '../../components/layout';
-import { usePostQuery } from '../../generated/graphql';
 import { createUrlqlClient } from '../../utils/createUrqlClient';
+import { useGetPostFromUrl } from '../../utils/useGetPostFromUrl';
 
 const Post = ({}) => {
-  const router = useRouter();
-  const id =
-    typeof router.query.id === 'string' ? parseInt(router.query.id, 10) : -1;
-  const [{ data, error, fetching }] = usePostQuery({
-    pause: id === -1,
-    variables: {
-      id
-    }
-  });
+  const [{ data, error, fetching }] = useGetPostFromUrl();
 
   if (error) {
     return <Layout>{error}</Layout>;
@@ -32,6 +24,10 @@ const Post = ({}) => {
     <Layout>
       <Heading>{data.post.title}</Heading>
       {data.post.text}
+      <EditDeletePostButtons
+        creatorId={data.post.creatorId}
+        postId={data.post.id}
+      ></EditDeletePostButtons>
     </Layout>
   );
 };
