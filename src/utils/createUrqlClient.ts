@@ -1,5 +1,5 @@
 import { dedupExchange, stringifyVariables } from '@urql/core';
-import { cacheExchange, Resolver } from '@urql/exchange-graphcache';
+import { cacheExchange, Resolver, Cache } from '@urql/exchange-graphcache';
 import Router from 'next/router';
 import { Exchange, fetchExchange } from 'urql';
 import { pipe, tap } from 'wonka';
@@ -53,7 +53,10 @@ export const createUrlqlClient = (ssrExchange: any, ctx: any) => {
         updates: {
           Mutation: {
             deletePost: (_result, args, cache, _info) => {
-              cache.invalidate({ __typename: 'Post', id: (args as DeletePostMutationVariables).id });
+              cache.invalidate({
+                __typename: 'Post',
+                id: (args as DeletePostMutationVariables).id
+              });
             },
             vote: (_result, args, cache, _info) => {
               const { postId, vote } = args as VoteMutationVariables;
@@ -85,15 +88,7 @@ export const createUrlqlClient = (ssrExchange: any, ctx: any) => {
               }
             },
             createPost: (_result, _args, cache, _info) => {
-              const allFields = cache.inspectFields('Query');
-              const fieldInfos = allFields.filter(
-                (info) => info.fieldName === 'posts'
-              );
-              fieldInfos.forEach((fi) => {
-                if (fi.arguments) {
-                  cache.invalidate('Query', 'posts', fi.arguments);
-                }
-              });
+              invalidateAllPosts(cache);
             },
             logout: (_result, _args, cache, _info) => {
               betterUpdateQuery<LogoutMutation, MeQuery>(
@@ -118,6 +113,7 @@ export const createUrlqlClient = (ssrExchange: any, ctx: any) => {
                   }
                 }
               );
+              invalidateAllPosts(cache);
             },
             register: (_result, _args, cache, _info) => {
               betterUpdateQuery<RegisterMutation, MeQuery>(
@@ -182,3 +178,12 @@ export const cursorPagination = (): Resolver => {
     };
   };
 };
+function invalidateAllPosts(cache: Cache) {
+  const allFields = cache.inspectFields('Query');
+  const fieldInfos = allFields.filter((info) => info.fieldName === 'posts');
+  fieldInfos.forEach((fi) => {
+    if (fi.arguments) {
+      cache.invalidate('Query', 'posts', fi.arguments);
+    }
+  });
+}
