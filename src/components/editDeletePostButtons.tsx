@@ -1,7 +1,7 @@
 import { DeleteIcon, EditIcon } from '@chakra-ui/icons';
 import { Flex, IconButton, Link } from '@chakra-ui/react';
 import NextLink from 'next/link';
-import router, { useRouter } from 'next/router';
+import router from 'next/router';
 import React from 'react';
 import { useDeletePostMutation, useMeQuery } from '../generated/graphql';
 interface editDeletePostButtonsProps {
@@ -14,7 +14,6 @@ const EditDeletePostButtons: React.FC<editDeletePostButtonsProps> = ({
   postId
 }) => {
   const [{ data: meData }] = useMeQuery();
-  const rotuer = useRouter();
   const [, deletePost] = useDeletePostMutation();
   return meData?.me?.id !== creatorId ? null : (
     <Flex direction="row" justifyContent="end">

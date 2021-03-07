@@ -1,11 +1,9 @@
-import { DeleteIcon, EditIcon } from '@chakra-ui/icons';
 import {
   Badge,
   Box,
   Button,
   Flex,
   Heading,
-  IconButton,
   Link,
   Stack,
   Text
@@ -16,15 +14,10 @@ import React, { useState } from 'react';
 import EditDeletePostButtons from '../components/editDeletePostButtons';
 import { Layout } from '../components/layout';
 import { UpdootSection } from '../components/updootSection';
-import {
-  useDeletePostMutation,
-  useMeQuery,
-  usePostsQuery
-} from '../generated/graphql';
+import { usePostsQuery } from '../generated/graphql';
 import { createUrlqlClient } from '../utils/createUrqlClient';
 
 const Index = () => {
-  const [{ data: meData }] = useMeQuery();
   const [variables, setVariables] = useState({
     limit: 20,
     cursor: null as string | null
@@ -33,7 +26,6 @@ const Index = () => {
     variables
   });
 
-  const [, deletePost] = useDeletePostMutation();
   if (!fetching && !data) {
     return <div>you got no posts, create one!</div>;
   }

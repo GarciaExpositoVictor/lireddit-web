@@ -7,10 +7,12 @@ interface updootSectionProps {
   post: PostSnippetFragment;
 }
 
+type updootState = {
+  voteStatus: 'updoot-loading' | 'downdoot-loading' | 'not-loading';
+}
+
 export const UpdootSection: React.FC<updootSectionProps> = ({ post }) => {
-  const [loadingState, setLoadingState] = useState<
-    'updoot-loading' | 'downdoot-loading' | 'not-loading'
-  >('not-loading');
+  const [setLoadingState] = useState<updootState>({voteStatus: 'not-loading'});
   const [, vote] = useVoteMutation();
   return (
     <Flex
@@ -31,12 +33,12 @@ export const UpdootSection: React.FC<updootSectionProps> = ({ post }) => {
           if(post.voteStatus === 1){
             return;
           }
-          setLoadingState('updoot-loading');
+          setLoadingState.voteStatus='updoot-loading';
           await vote({
             postId: post.id,
             vote: 1
           });
-          setLoadingState('not-loading');
+          setLoadingState.voteStatus = 'not-loading';
         }}
         disabled={post.voteStatus === 1}
       ></IconButton>
@@ -48,12 +50,12 @@ export const UpdootSection: React.FC<updootSectionProps> = ({ post }) => {
         aria-label="downvote"
         colorScheme="blue"
         onClick={async () => {
-          setLoadingState('downdoot-loading');
+          setLoadingState.voteStatus = 'downdoot-loading';
           await vote({
             postId: post.id,
             vote: -1
           });
-          setLoadingState('not-loading');
+          setLoadingState.voteStatus = 'not-loading';
         }}
         disabled={post.voteStatus === -1}
       ></IconButton>
